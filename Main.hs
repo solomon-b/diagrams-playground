@@ -15,9 +15,9 @@ module Main where
 import Data.Dynamic
 import Data.Function
 import Data.Proxy
-import Data.Monoid
+import Data.Monoid hiding (Product)
 
-import Diagrams.Prelude
+import Diagrams.Prelude hiding (Product)
 import Diagrams.Backend.Rasterific.CmdLine
 
 import GHC.TypeLits
@@ -33,6 +33,7 @@ data Schematic (k :: Nat) where
   String  :: Schematic k
   Slot    :: Schematic k
   AndThen :: (KnownNat i, KnownNat j) => Schematic i -> Schematic j -> Schematic (i+j)
+  (:*:) :: Schematic k -> Schematic k -> Schematic k
 
 
 runSchematic :: forall k. KnownNat k => Schematic k -> Diagram B
@@ -41,6 +42,7 @@ runSchematic = \case
   Slot | n == 0 -> runSchematic (String @1)
   Slot   -> foldr (|||) mempty (replicate n (hrule 1 ||| square 1 ||| hrule 1))
   AndThen x y -> runSchematic x ||| runSchematic y
+  x :*: y -> runSchematic x <+> runSchematic y
   where n = fromIntegral $ natVal $ Proxy @k
 
 {-
@@ -91,11 +93,11 @@ string1 = String
 string2 :: Schematic 2
 string2 = String
 
-andThen2 :: Schematic 4
-andThen2 = AndThen (Slot @1) (AndThen String (Slot @1))
+andThen2 :: Schematic 2
+andThen2 = AndThen (Slot @1) String
 
 --cSmoosh :: forall j k. (KnownNat j, KnownNat k) => Chain j -> Chain k -> Chain (j+k)
 --cSmoosh _ _ = Chain
 
 main :: IO ()
-main = mainWith $ square 15 <> center (runSchematic andThen2)
+main = mainWith $ square 15 <> center (runSchematic ((Slot @3) :*: ((Slot @1) `AndThen` String)))
