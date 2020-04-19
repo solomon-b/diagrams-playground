@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
@@ -32,18 +32,21 @@ a <+> b = pad 1.5 a === pad 1.5 b
 data Schematic (k :: Nat) where
   String  :: Schematic k
   Slot    :: Schematic k
+  Slot'   :: forall i j. (KnownNat i, KnownNat j) => Schematic (i+j)
   AndThen :: (KnownNat i, KnownNat j) => Schematic i -> Schematic j -> Schematic (i+j)
   (:*:) :: Schematic k -> Schematic k -> Schematic k
 
-
 runSchematic :: forall k. KnownNat k => Schematic k -> Diagram B
 runSchematic = \case
-  String -> foldr (|||) mempty (replicate n (hrule 3))
+  String -> center $ foldr (|||) mempty (replicate n (hrule 3))
   Slot | n == 0 -> runSchematic (String @1)
-  Slot   -> foldr (|||) mempty (replicate n (hrule 1 ||| square 1 ||| hrule 1))
-  AndThen x y -> runSchematic x ||| runSchematic y
+  Slot   -> center $ foldr (|||) mempty (replicate n (hrule 1 ||| square 1 ||| hrule 1))
+  AndThen x y -> center $ runSchematic x ||| runSchematic y
   x :*: y -> runSchematic x <+> runSchematic y
   where n = fromIntegral $ natVal $ Proxy @k
+
+slot' :: forall i j. (KnownNat i, KnownNat j) => Schematic (i+j) -> Schematic (i+j)
+slot' Slot' = Slot @i `AndThen` String
 
 {-
 
@@ -68,36 +71,18 @@ String 1:
 String 2:
 ------
 
-AndThen (Slot 1) (String 1) 2
+AndThen (Slot 1) String 2
 -[]----
+
+AndThen String (Slot 1)
+----[]-
+
 -}
-
-slot0 :: Schematic 0
-slot0 = Slot
-
-slot1 :: Schematic 1
-slot1 = Slot
-
-slot2 :: Schematic 2
-slot2 = Slot
-
-slot2' :: Schematic 2
-slot2' = AndThen (Slot @1) (Slot @1)
-
-string0 :: Schematic 0
-string0 = String
-
-string1 :: Schematic 1
-string1 = String
-
-string2 :: Schematic 2
-string2 = String
-
-andThen2 :: Schematic 2
-andThen2 = AndThen (Slot @1) String
 
 --cSmoosh :: forall j k. (KnownNat j, KnownNat k) => Chain j -> Chain k -> Chain (j+k)
 --cSmoosh _ _ = Chain
 
 main :: IO ()
-main = mainWith $ square 15 <> center (runSchematic ((Slot @3) :*: ((Slot @1) `AndThen` String)))
+main =
+  let s = runSchematic ((Slot @3) :*: (Slot @1 `AndThen` String))
+  in mainWith $ square 15 <> center s
