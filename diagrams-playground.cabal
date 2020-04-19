@@ -23,6 +23,9 @@ executable diagrams-playground
   -- other-extensions:
   build-depends:       base >=4.12 && <4.13
                      , diagrams
+                     , diagrams-lib
+                     , diagrams-svg
+                     , diagrams-rasterific
                      , lens
                      , mtl
                      , profunctors
