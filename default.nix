@@ -1,5 +1,5 @@
 { mkDerivation, base, diagrams, diagrams-lib, diagrams-rasterific
-, diagrams-svg, lens, mtl, profunctors, stdenv, transformers
+, diagrams-svg, free, stdenv, transformers
 }:
 mkDerivation {
   pname = "diagrams-playground";
@@ -8,8 +8,8 @@ mkDerivation {
   isLibrary = false;
   isExecutable = true;
   executableHaskellDepends = [
-    base diagrams diagrams-lib diagrams-rasterific diagrams-svg lens
-    mtl profunctors transformers
+    base diagrams diagrams-lib diagrams-rasterific diagrams-svg free
+    transformers
   ];
   license = "unknown";
   hydraPlatforms = stdenv.lib.platforms.none;

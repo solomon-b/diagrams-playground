@@ -26,9 +26,7 @@ executable diagrams-playground
                      , diagrams-lib
                      , diagrams-svg
                      , diagrams-rasterific
-                     , lens
-                     , mtl
-                     , profunctors
+                     , free
                      , transformers
   -- hs-source-dirs:
   default-language:    Haskell2010
