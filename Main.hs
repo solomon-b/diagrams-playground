@@ -81,11 +81,11 @@ class Category c where
 --  (.) :: forall k a b c. KnownNat k => Schematic k a b -> Schematic k b c -> Schematic k a c
 --  (.) = (:>>)
 
-data Schematic (a :: *) (b :: *) where
-  String  :: Schematic a a
+data Schematic (a :: Nat) (b :: Nat) where
+  String  :: Schematic 1 1
   Slot    :: Schematic a b
   (:>>)   :: Schematic a b -> Schematic b c -> Schematic a c
-  (:*:)   :: Schematic a a' -> Schematic b b' -> Schematic (a , a') (b , b')
+  (:*:)   :: Schematic a a' -> Schematic b b' -> Schematic (a + b) (a' + b')
   --(:*:)   :: Bifunctor f => Schematic a a' -> Schematic b b' -> Schematic (a `f` a') (b `f` b')
   --Swap    :: KnownNat n => Int -> Schematic k  -> Schematic k
 
@@ -101,13 +101,20 @@ depth (a :*: b) = max (depth a) (depth b)
 depth String = 1
 depth Slot = 1
 
-stretch :: Schematic a b -> Schematic a b
-stretch (a :*: b) =
-  let (i, j) = (depth a, depth b)
-      extendo n s = foldl' (:>>) s $ replicate n String
-  in if i > j then Main.stretch a :*: extendo (i-j) (Main.stretch b) else extendo (j-1) (Main.stretch a) :*: Main.stretch b
-stretch schematic = schematic
+--stretch :: Schematic a b -> Schematic a b
+--stretch (a :*: b) =
+--  let (i, j) = (depth a, depth b)
+--      extendo n s = foldl' (:>>) s $ replicate n String
+--  in if i > j
+--     then Main.stretch a :*: extendo (i-j) (Main.stretch b)
+--     else extendo (j-1) (Main.stretch a) :*: Main.stretch b
+--stretch schematic = schematic
 
+--runSchematic :: forall a b. (KnownNat a, KnownNat b) =>
+--  Schematic a b -> Diagram b
+--runSchematic = \case
+--  String -> hrule 3
+--  Slot -> 
 
 --runSchematic :: forall k. KnownNat k => Schematic k -> Diagram B
 --runSchematic = \case
@@ -121,7 +128,7 @@ stretch schematic = schematic
 --cSmoosh :: forall j k. (KnownNat j, KnownNat k) => Chain j -> Chain k -> Chain (j+k)
 --cSmoosh _ _ = Chain
 
-
+{-
 --weird :: Free (SchematicF ((,) (Diagram B))) (Diagram B)
 --weird = Free $ AndThen' (square1 , Free $ AndThen' (line1, Pure square1))
 
@@ -155,10 +162,35 @@ homomorphism (Product' t) =
 
 result :: Free (SchematicF []) (Diagram B) -> Diagram B
 result = iter homomorphism
+-}
 
+x :: Diagram B
+x = (a1 === a2) ||| box ||| b
+  where
+    box = square 1
+    a1 = hrule 1
+    a2 = hrule 1
+    b  = hrule 1
+
+mkWire :: Point V2 Double -> Point V2 Double -> Diagram B
+mkWire = arrowBetween' (with & arrowHead .~ noHead)
+
+drawMap :: Double -> Double -> Diagram B
+drawMap a b =
+  let as = [ (0 ^& y) `mkWire` (1 ^& y) | y <- [1,2..a]]
+      bs = [ (0 ^& y) `mkWire` (1 ^& y) | y <- [1,2..b]]
+  in scale (1 / max a b) $ center (fold as) ||| square (max a b) ||| center (fold bs)
 
 main :: IO ()
-main =
-  let d = result product2
-      --s = runSchematic $ Slot :>> Slot :*: (Slot :>> String)
-  in mainWith $ center d <> (square 15 # fc white)
+main = do
+  let box1 :: Diagram B
+      box1 = square 1 # named "box1"
+      a :: Point V2 Double
+      a = -0.5 ^& 0.0
+      b :: Point V2 Double
+      b = 0.5 ^& 0.0
+      schematic = box1 <> (arrowBetween' (with & arrowHead .~ noHead)a b)
+  mainWith $ center (drawMap 1 3 ||| drawMap 3 1) <> (square 15 # fc white)
+  --let --d = result product2
+  --    s = runSchematic $ Slot :>> Slot :*: (Slot :>> String)
+  --in mainWith $ center s <> (square 15 # fc white)
