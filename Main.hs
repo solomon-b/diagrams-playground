@@ -182,15 +182,4 @@ drawMap a b =
   in scale (1 / max a b) $ center (fold as) ||| square (max a b) ||| center (fold bs)
 
 main :: IO ()
-main = do
-  let box1 :: Diagram B
-      box1 = square 1 # named "box1"
-      a :: Point V2 Double
-      a = -0.5 ^& 0.0
-      b :: Point V2 Double
-      b = 0.5 ^& 0.0
-      schematic = box1 <> (arrowBetween' (with & arrowHead .~ noHead)a b)
-  mainWith $ center (drawMap 1 3 ||| drawMap 3 1) <> (square 15 # fc white)
-  --let --d = result product2
-  --    s = runSchematic $ Slot :>> Slot :*: (Slot :>> String)
-  --in mainWith $ center s <> (square 15 # fc white)
+main = mainWith $ center (drawMap 1 3 ||| drawMap 3 1) <> (square 15 # fc white)
